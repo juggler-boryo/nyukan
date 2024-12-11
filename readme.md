@@ -4,4 +4,4 @@
 
 - nfcで入室、退室ができる
 - 施設の入り口に置いてある
-- raspberry pi製
+- raspberry pi
