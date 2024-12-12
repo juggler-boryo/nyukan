@@ -139,6 +139,7 @@ func main() {
 			}
 
 			sound.PlayTry()
+
 			if err := handleNFCCard(cr.idm); err != nil {
 				sound.PlayError()
 				msg := "❌未登録のnfcカード: " + cr.idm + "\n ttps://aigrid.vercel.app/profile で登録してください"
@@ -147,6 +148,8 @@ func main() {
 				}
 				log.Println(msg)
 				log.Println(err)
+				time.Sleep(2 * time.Second)
+				continue
 			}
 
 			time.Sleep(100 * time.Millisecond)
