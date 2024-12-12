@@ -16,7 +16,7 @@ type NFCDTO struct {
 }
 
 type InoutRequest struct {
-	IsIn bool `json:"is_in"`
+	IsIn bool `json:"isIn"`
 }
 
 const baseURL = "https://aigrid-731240201745.asia-northeast1.run.app"
@@ -41,7 +41,7 @@ func FetchUserInfo(suicaID string) (*NFCDTO, error) {
 }
 
 func UpdateInoutStatus(uid string, isIn bool) error {
-	reqBody := InoutRequest{IsIn: !isIn}
+	reqBody := InoutRequest{IsIn: isIn}
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return fmt.Errorf("JSON encode error: %v", err)

@@ -20,7 +20,7 @@ type CardReader struct {
 	card *scard.Card
 }
 
-func NewCardReader() (*CardReader, error) {
+func InitCardReader() (*CardReader, error) {
 	ctx, err := scard.EstablishContext()
 	if err != nil {
 		return nil, err
@@ -45,45 +45,46 @@ func NewCardReader() (*CardReader, error) {
 }
 
 func (cr *CardReader) ReadID() error {
-	for {
-		status, err := cr.card.Status()
-		if err != nil {
-			return fmt.Errorf("card status error: %v", err)
-		}
-		if uint32(status.State)&uint32(scard.StatePresent) != 0 {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
+	if cr == nil || cr.card == nil {
+		return fmt.Errorf("card reader not initialized")
 	}
 
+	// Configure for FeliCa cards (similar to Python's 212F setting)
+	status, err := cr.card.Status()
+	if err != nil {
+		return fmt.Errorf("card status error: %v", err)
+	}
+	log.Println(status)
+
+	// FeliCa polling command (similar to Python's sensf_req)
+	// 0x00: system code filter
+	// 0xFF: FeliCa system code for all cards
 	command := []byte{0xFF, 0xCA, 0x00, 0x00, 0x00}
+
 	response, err := cr.card.Transmit(command)
 	if err != nil {
 		return fmt.Errorf("transmit error: %v", err)
 	}
 
-	cr.idm = hex.EncodeToString(response[:8])
-	fmt.Printf("Detected card IDm: %s\n", cr.idm)
+	cr.idm = hex.EncodeToString(response[:6])
+	fmt.Printf("Detected FeliCa card IDm: %s\n", cr.idm)
 	return nil
 }
 
 func handleNFCCard(suicaID string) error {
-	// TODO: play weird sound
-	// Get user information
 	user, err := lib.FetchUserInfo(suicaID)
 	if err != nil {
 		return fmt.Errorf("Failed to get user information: %v", err)
 	}
 	log.Printf("User: %+v", user)
 
-	// Update entry/exit status
 	if err := lib.UpdateInoutStatus(user.UID, !user.IsIn); err != nil {
 		// this means server impl is fucked up
 		return fmt.Errorf("Failed to update entry/exit status: %v", err)
 	}
 
 	action := "entered"
-	if !user.IsIn {
+	if user.IsIn {
 		action = "exited"
 	}
 
@@ -101,7 +102,6 @@ func main() {
 	log.Println("nyukan: NFC card reading system")
 	sound.PlayConnect()
 
-	// グレースフルシャットダウンの設定
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -114,27 +114,34 @@ func main() {
 	var cr *CardReader
 	for {
 		var err error
-		cr, err = NewCardReader()
+		cr, err = InitCardReader()
 		if err != nil {
-			log.Printf("Failed to initialize card reader: %v. Retrying in 5 seconds...", err)
-			sound.PlayError()
-			time.Sleep(5 * time.Second)
+			log.Printf("Failed to initialize card reader: %v", err)
+			time.Sleep(2 * time.Second)
 			continue
 		}
 
 		// メインループ
 		for {
 			fmt.Println("Waiting for FeliCa card...")
-			if err := cr.ReadID(); err != nil {
+			err := cr.ReadID()
+			if err != nil {
+				if err.Error() == "card status error: scard: Card was removed." {
+					break // Break inner loop to reinitialize reader
+				}
+
+				if err.Error() == "card reader not initialized" {
+					break // Break inner loop to reinitialize reader
+				}
+
 				log.Printf("Error reading card: %v. Reinitializing reader...", err)
-				sound.PlayError()
-				break // カードリーダーの再初期化へ
+				break // Break inner loop to reinitialize reader
 			}
 
 			sound.PlayTry()
 			if err := handleNFCCard(cr.idm); err != nil {
 				sound.PlayError()
-				msg := "❌未登録のnfcカード: " + cr.idm
+				msg := "❌未登録のnfcカード: " + cr.idm + "\n ttps://aigrid.vercel.app/profile で登録してください"
 				if err := lib.SendMessageToDiscord(lib.GetDiscordChannelID(), msg); err != nil {
 					log.Printf("Failed to send Discord message: %v", err)
 				}
@@ -142,7 +149,10 @@ func main() {
 				log.Println(err)
 			}
 
-			time.Sleep(2 * time.Second)
+			time.Sleep(100 * time.Millisecond)
 		}
+
+		// Add small delay before trying to reinitialize
+		time.Sleep(1 * time.Second)
 	}
 }
