@@ -9,9 +9,8 @@ Environment=XDG_RUNTIME_DIR=/run/user/1000
 Environment=PULSE_RUNTIME_PATH=/run/user/1000/pulse
 Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
 WorkingDirectory=/home/finyl/nyukan
-ExecStart=/bin/bash -c "pcsc_scan & ./main"
+ExecStart=/bin/bash -c "./main"
 Restart=always
-RestartSec=180
 
 [Install]
 WantedBy=multi-user.target
