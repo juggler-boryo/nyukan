@@ -12,6 +12,8 @@ import (
 	"nyukan/lib"
 	"nyukan/sound"
 
+	"flag"
+
 	"github.com/ebfe/scard"
 )
 
@@ -107,7 +109,10 @@ func handleNFCCard(suicaID string) error {
 }
 
 func main() {
-	log.Println("nyukan: NFC card reading system")
+	analyticsMode := flag.Bool("analytics", false, "Run in analytics mode (only read cards)")
+	flag.Parse()
+
+	log.Printf("nyukan: NFC card reading system (analytics mode: %v)", *analyticsMode)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
@@ -142,16 +147,19 @@ func main() {
 				break
 			}
 
-			sound.PlayTry()
-
-			if err := handleNFCCard(cr.idm); err != nil {
-				sound.PlayError()
-				msg := "❌未登録のnfcカード: " + cr.idm + "\n ttps://aigrid.vercel.app/profile で登録してください"
-				if err := lib.SendMessageToDiscord(lib.GetDiscordChannelID(), msg); err != nil {
-					log.Printf("Failed to send Discord message: %v", err)
+			if *analyticsMode {
+				log.Printf("Card detected - IDm: %s", cr.idm)
+			} else {
+				sound.PlayTry()
+				if err := handleNFCCard(cr.idm); err != nil {
+					sound.PlayError()
+					msg := "❌未登録のnfcカード: " + cr.idm + "\n ttps://aigrid.vercel.app/profile で登録してください"
+					if err := lib.SendMessageToDiscord(lib.GetDiscordChannelID(), msg); err != nil {
+						log.Printf("Failed to send Discord message: %v", err)
+					}
+					log.Println(msg)
+					log.Println(err)
 				}
-				log.Println(msg)
-				log.Println(err)
 			}
 
 			fmt.Println("WaitForCardRemoval")
