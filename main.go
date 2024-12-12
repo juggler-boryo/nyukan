@@ -71,6 +71,19 @@ func (cr *CardReader) ReadID() error {
 	return nil
 }
 
+func (cr *CardReader) WaitForCardRemoval() error {
+	for {
+		_, err := cr.card.Status()
+		if err != nil {
+			if err.Error() == "scard: Card was removed." {
+				return nil
+			}
+			return err
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 func handleNFCCard(suicaID string) error {
 	user, err := lib.FetchUserInfo(suicaID)
 	if err != nil {
@@ -116,46 +129,46 @@ func main() {
 		cr, err = InitCardReader()
 		if err != nil {
 			log.Printf("Failed to initialize card reader: %v", err)
-			time.Sleep(2 * time.Second)
+			time.Sleep(1000 * time.Millisecond)
 			continue
 		}
-		sound.PlayConnect()
 
-		// メインループ
 		for {
 			fmt.Println("Waiting for FeliCa card...")
 			err := cr.ReadID()
+			fmt.Println("ReadID done")
 			if err != nil {
 				if err.Error() == "card status error: scard: Card was removed." {
-					break // Break inner loop to reinitialize reader
+					break
 				}
-
 				if err.Error() == "card reader not initialized" {
-					break // Break inner loop to reinitialize reader
+					break
 				}
-
 				log.Printf("Error reading card: %v. Reinitializing reader...", err)
-				break // Break inner loop to reinitialize reader
+				break
 			}
 
 			sound.PlayTry()
 
-			if err := handleNFCCard(cr.idm); err != nil {
-				sound.PlayError()
-				msg := "❌未登録のnfcカード: " + cr.idm + "\n ttps://aigrid.vercel.app/profile で登録してください"
-				if err := lib.SendMessageToDiscord(lib.GetDiscordChannelID(), msg); err != nil {
-					log.Printf("Failed to send Discord message: %v", err)
-				}
-				log.Println(msg)
-				log.Println(err)
-				time.Sleep(2 * time.Second)
-				continue
-			}
+			// if err := handleNFCCard(cr.idm); err != nil {
+			// 	sound.PlayError()
+			// 	msg := "❌未登録のnfcカード: " + cr.idm + "\n ttps://aigrid.vercel.app/profile で登録してください"
+			// 	if err := lib.SendMessageToDiscord(lib.GetDiscordChannelID(), msg); err != nil {
+			// 		log.Printf("Failed to send Discord message: %v", err)
+			// 	}
+			// 	log.Println(msg)
+			// 	log.Println(err)
+			// }
 
-			time.Sleep(100 * time.Millisecond)
+			fmt.Println("WaitForCardRemoval")
+			if err := cr.WaitForCardRemoval(); err != nil {
+				log.Printf("Error waiting for card removal: %v", err)
+				break
+			}
 		}
 
 		// Add small delay before trying to reinitialize
-		time.Sleep(2 * time.Second)
+		time.Sleep(10 * time.Millisecond)
+		fmt.Println("Reinitializing card reader")
 	}
 }
