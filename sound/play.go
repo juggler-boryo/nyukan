@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	bb      = "sound/bb.mp3"
-	in      = "sound/in.mp3"
-	connect = "sound/connect.mp3"
-	error   = "sound/error.mp3"
-	try     = "sound/try.mp3"
+	bb      = "/home/finyl/nyukan/sound/bb.mp3"
+	in      = "/home/finyl/nyukan/sound/in.mp3"
+	connect = "/home/finyl/nyukan/sound/connect.mp3"
+	error   = "/home/finyl/nyukan/sound/error.mp3"
+	try     = "/home/finyl/nyukan/sound/try.mp3"
 )
 
 func init() {
