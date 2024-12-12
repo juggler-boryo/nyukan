@@ -1,0 +1,12 @@
+[Unit]
+Description=Nyukan
+After=network.target
+
+[Service]
+ExecStart=/bin/bash -c "pcsc_scan & ./main"
+WorkingDirectory=/home/finyl/nyukan
+Restart=always
+User=finyl
+
+[Install]
+WantedBy=multi-user.target
