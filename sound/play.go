@@ -48,7 +48,7 @@ func Play(soundFile string) {
 	volume := &effects.Volume{
 		Streamer: streamer,
 		Base:     2,
-		Volume:   3, // log2(10) ≈ 3 for 10x volume
+		Volume:   1.5,
 	}
 
 	done := make(chan bool)
