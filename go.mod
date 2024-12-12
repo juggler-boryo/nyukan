@@ -1,6 +1,6 @@
 module nyukan
 
-go 1.22.5
+go 1.19
 
 require (
 	github.com/bwmarrin/discordgo v0.28.1 // indirect
