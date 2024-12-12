@@ -31,7 +31,6 @@ func InitCardReader() (*CardReader, error) {
 		return nil, err
 	}
 
-	// Check if there are any readers available
 	if len(readers) == 0 {
 		return nil, fmt.Errorf("no card readers found")
 	}
@@ -49,16 +48,12 @@ func (cr *CardReader) ReadID() error {
 		return fmt.Errorf("card reader not initialized")
 	}
 
-	// Configure for FeliCa cards (similar to Python's 212F setting)
 	status, err := cr.card.Status()
 	if err != nil {
 		return fmt.Errorf("card status error: %v", err)
 	}
 	log.Println(status)
 
-	// FeliCa polling command (similar to Python's sensf_req)
-	// 0x00: system code filter
-	// 0xFF: FeliCa system code for all cards
 	command := []byte{0xFF, 0xCA, 0x00, 0x00, 0x00}
 
 	response, err := cr.card.Transmit(command)
@@ -150,15 +145,15 @@ func main() {
 
 			sound.PlayTry()
 
-			// if err := handleNFCCard(cr.idm); err != nil {
-			// 	sound.PlayError()
-			// 	msg := "❌未登録のnfcカード: " + cr.idm + "\n ttps://aigrid.vercel.app/profile で登録してください"
-			// 	if err := lib.SendMessageToDiscord(lib.GetDiscordChannelID(), msg); err != nil {
-			// 		log.Printf("Failed to send Discord message: %v", err)
-			// 	}
-			// 	log.Println(msg)
-			// 	log.Println(err)
-			// }
+			if err := handleNFCCard(cr.idm); err != nil {
+				sound.PlayError()
+				msg := "❌未登録のnfcカード: " + cr.idm + "\n ttps://aigrid.vercel.app/profile で登録してください"
+				if err := lib.SendMessageToDiscord(lib.GetDiscordChannelID(), msg); err != nil {
+					log.Printf("Failed to send Discord message: %v", err)
+				}
+				log.Println(msg)
+				log.Println(err)
+			}
 
 			fmt.Println("WaitForCardRemoval")
 			if err := cr.WaitForCardRemoval(); err != nil {
