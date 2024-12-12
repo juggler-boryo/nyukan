@@ -100,7 +100,6 @@ func handleNFCCard(suicaID string) error {
 
 func main() {
 	log.Println("nyukan: NFC card reading system")
-	sound.PlayConnect()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
@@ -120,6 +119,7 @@ func main() {
 			time.Sleep(2 * time.Second)
 			continue
 		}
+		sound.PlayConnect()
 
 		// メインループ
 		for {
@@ -156,6 +156,6 @@ func main() {
 		}
 
 		// Add small delay before trying to reinitialize
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 }
