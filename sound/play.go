@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/faiface/beep"
-	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
 )
@@ -44,15 +43,8 @@ func Play(soundFile string) {
 	}
 	defer streamer.Close()
 
-	// Create volume control with 5x amplification
-	volume := &effects.Volume{
-		Streamer: streamer,
-		Base:     2,
-		Volume:   1.5,
-	}
-
 	done := make(chan bool)
-	speaker.Play(beep.Seq(volume, beep.Callback(func() {
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
 		done <- true
 	})))
 
