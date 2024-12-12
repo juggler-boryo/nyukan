@@ -20,6 +20,7 @@ import (
 type CardReader struct {
 	idm  string
 	card *scard.Card
+	ctx  *scard.Context
 }
 
 func InitCardReader() (*CardReader, error) {
@@ -30,19 +31,22 @@ func InitCardReader() (*CardReader, error) {
 
 	readers, err := ctx.ListReaders()
 	if err != nil {
+		ctx.Release()
 		return nil, err
 	}
 
 	if len(readers) == 0 {
+		ctx.Release()
 		return nil, fmt.Errorf("no card readers found")
 	}
 
 	card, err := ctx.Connect(readers[0], scard.ShareShared, scard.ProtocolAny)
 	if err != nil {
+		ctx.Release()
 		return nil, err
 	}
 
-	return &CardReader{card: card}, nil
+	return &CardReader{card: card, ctx: ctx}, nil
 }
 
 func (cr *CardReader) ReadID() error {
@@ -108,6 +112,17 @@ func handleNFCCard(suicaID string) error {
 	return nil
 }
 
+func (cr *CardReader) Close() {
+	if cr.card != nil {
+		cr.card.Disconnect(scard.LeaveCard)
+		cr.card = nil
+	}
+	if cr.ctx != nil {
+		cr.ctx.Release()
+		cr.ctx = nil
+	}
+}
+
 func main() {
 	analyticsMode := flag.Bool("analytics", false, "Run in analytics mode (only read cards)")
 	flag.Parse()
@@ -168,11 +183,16 @@ func main() {
 				break
 			}
 
+			cr.Close()
 			os.Exit(0)
 		}
 
 		// Add small delay before trying to reinitialize
 		time.Sleep(10 * time.Millisecond)
 		fmt.Println("Reinitializing card reader")
+
+		if cr != nil {
+			cr.Close()
+		}
 	}
 }
