@@ -11,6 +11,7 @@ Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
 WorkingDirectory=/home/finyl/nyukan
 ExecStart=/bin/bash -c "pcsc_scan & ./main"
 Restart=always
+RestartSec=180
 
 [Install]
 WantedBy=multi-user.target

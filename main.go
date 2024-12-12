@@ -114,7 +114,6 @@ func main() {
 	go func() {
 		<-sigChan
 		log.Println("Shutting down gracefully...")
-		sound.PlayError()
 		os.Exit(0)
 	}()
 
@@ -160,6 +159,8 @@ func main() {
 				log.Printf("Error waiting for card removal: %v", err)
 				break
 			}
+
+			os.Exit(0)
 		}
 
 		// Add small delay before trying to reinitialize
