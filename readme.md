@@ -14,3 +14,7 @@ cd /home/finyl/nyukan
 go build -o main main.go
 // TODO: enable nyukan systemd service (see ./nyukan.service)
 ```
+
+# ssh
+
+ssh finyl@192.168.2.105
